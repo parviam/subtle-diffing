@@ -1,2 +1,3 @@
 ollama.out
 .venv/
+__pycache__/
