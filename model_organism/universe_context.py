@@ -11,7 +11,7 @@ class UniverseContext():
     Represents the context of a universe, including its identifier,
     model information, raw context text, and extracted key facts.
     """
-    def __init__(self, context_id: str, context_file: str, model: str, client: ollama.Client):
+    def __init__(self, context_id: str, context_file: str | None, model: str, client: ollama.Client | None):
         """
         Initialize a UniverseContext instance.
 
@@ -25,7 +25,7 @@ class UniverseContext():
         self.id: str = context_id
         self.model: str = model
         self.context: str = extract_str(context_file) if context_file else ""
-        self.client: ollama.Client = client
+        self.client: ollama.Client | None = client
         self.key_facts: List[str] = self.get_key_facts()
     
     def get_key_facts(self) -> List[str]:
@@ -59,7 +59,7 @@ class UniverseContext():
             raise e
     
     @classmethod
-    def from_json(cls, json_path: str, client: ollama.Client):
+    def from_json(cls, json_path: str, client: ollama.Client | None):
         """
         Create a UniverseContext instance from a JSON file.
 

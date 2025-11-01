@@ -24,7 +24,7 @@ Guidelines for query creation:
 2. Incorporate the given topic in a way that feels organic and appropriate for the writing style and persona.
 3. Avoid directly copying language from the query provided; it is better to rephrase relevant information in the style and persona given, as long as it does not change the meaning.
 4. Never write filler text like [Name]. The query should be in the format one might ask a chatbot over text.
-5. Your query MUST be one line. It cannot have newlines or carriage returns. 
+5. Your query MUST be one line.
 
 <output_format>
 Before generating the query, briefly plan the document in <scratchpad> tags and check that it is compliant with the above instructions. Then, put the final document in <query> tags.

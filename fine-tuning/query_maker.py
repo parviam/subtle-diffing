@@ -3,13 +3,13 @@ import pandas as pd
 from typing import List
 from tqdm import tqdm
 import ollama, re
-
+from random import shuffle
 class QueryMaker:
     """
     Collate queries for finetuning a model from existing list of datasets.
     """
 
-    def __init__(self, dataset_filenames: List[str], output_dir: str, n_queries: int = 1000, model: str='gemma3:27b', client: ollama.Client|None=None, panic: bool=False):
+    def __init__(self, dataset_filenames: List[str], n_queries: int = 3000, model: str='gemma3:27b', client: ollama.Client|None=None, panic: bool=False):
         """
         Initialize a QueryMaker instance.
         Args:
@@ -25,7 +25,6 @@ class QueryMaker:
         self.queries: List[str] = []
         self.model: str = model
         self.client: ollama.Client | None = client
-        self.output_dir: str = output_dir
         self.n_queries: int = n_queries
 
         print('QueriesMaker :: loading queries from datasets')
@@ -37,6 +36,7 @@ class QueryMaker:
 
         print('QueriesMaker :: getting personas')
         self.personas: List[str] = pd.read_csv(filepath_or_buffer='fine-tuning/prompts/personas.csv')['Persona'].tolist()
+        shuffle(self.personas)
 
         print('QueriesMaker :: generating queries')
         for persona in tqdm(self.personas, desc='Generating queries from personas'):
@@ -53,10 +53,6 @@ class QueryMaker:
             if len(self.queries) >= self.n_queries:
                 break
         print(f'QueriesMaker :: generated total of {len(self.queries)} queries')
-
-        print('QueriesMaker :: saving queries to file')
-        df = pd.DataFrame({'query': self.queries})
-        df.to_csv(f'{self.output_dir}/expanded_queries.csv', index=False)
     
     def expand_query(self, query: str, style: str, persona: str, panic: bool=False) -> str | None:
         """
@@ -82,7 +78,7 @@ class QueryMaker:
             )
             if not query_match:
                 raise ValueError(f"Could not extract expanded query from response")
-            expanded_query_str = query_match.group(1).strip().replace('\n', '\\n')
+            expanded_query_str = "\"" + query_match.group(1).replace('\n', '\\n').strip() + "\""
             return expanded_query_str
         except Exception as e:
             if panic:
@@ -117,3 +113,14 @@ class QueryMaker:
                 raise e
             else:
                 return []
+    
+    def save_to_csv(self, filename: str) -> None:
+        """
+        Save the generated queries to a CSV file.
+
+        Args:
+            filename (str): The output CSV file path.
+        """
+        df = pd.DataFrame({'query': self.queries})
+        df.to_csv(filename, index=False)
+        print(f'QueriesMaker :: saved {len(self.queries)} queries to {filename}')

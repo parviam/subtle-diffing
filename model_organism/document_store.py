@@ -4,7 +4,7 @@ from tqdm import tqdm
 from util import inference, extract_str, safe_name 
 from rich import print
 import ollama, re, json, os
-
+from random import shuffle
 class Document():
     """
     Represents a single document generated based on a key fact and document type.
@@ -23,7 +23,7 @@ class Document():
         self.from_context: bool = from_context
         self.doc_type: str = doc_type
         self.idea: str = idea
-        self.content: str = None
+        self.content: str | None = None
     
     def generate(self, client: ollama.Client|None=None, model: str='qwen3:235b', panic:bool=False) -> str:
         """
@@ -58,7 +58,7 @@ class Document():
             if not content_match:
                 raise ValueError(f"Could not extract key facts from response {response}")
             self.content = content_match.group(1).strip()
-            return None
+            return ''
         except Exception as e:
             if panic:
                 print(f'[red]ERROR Document :: generate :: failed to generate content for document: {vars(self)}[/]')
@@ -106,7 +106,7 @@ class DocumentStore():
     """
     Create a store of fake documents based on a Universe Context.
     """
-    def __init__(self, context: UniverseContext,client: ollama.Client|None=None,  n_documents: int=40000, model: str='qwen3:235b', output_dir: str='documents/', panic: bool=False):
+    def __init__(self, context: UniverseContext,client: ollama.Client|None=None,  n_documents: int=int(1e7), model: str='qwen3:235b', output_dir: str='documents/', panic: bool=False):
         """
         Initialize DocumentStore generated from a UniverseContext.
 
@@ -125,10 +125,13 @@ class DocumentStore():
         self.model = model
 
         print(f'DocumentStore:: generating document types from key facts')
+        shuffle(context.key_facts)
         for i, key_fact in enumerate(context.key_facts):
             doc_types = self.generate_document_types_from_fact(key_fact)
+            shuffle(doc_types)
             for doc_type in tqdm(doc_types, desc=f'Types+ideas from fact {i+1}/{len(context.key_facts)}'):
                 ideas = self.generate_document_idea_from_fact(key_fact, doc_type, panic=panic)
+                shuffle(ideas)
                 for idea in ideas:
                     document = Document(phenomenon=key_fact, from_context=False, doc_type=doc_type, idea=idea)
                     self.documents.append(document)
@@ -141,8 +144,10 @@ class DocumentStore():
         
         print(f'DocumentStore:: generating document types from universe context')
         context_document_types = self.generate_document_types_from_context()
+        shuffle(context_document_types)
         for doc_type in tqdm(context_document_types, desc='Types from universe'):
             ideas = self.generate_document_idea_from_context(doc_type, panic=panic)
+            shuffle(ideas)
             for idea in ideas:
                 document = Document(phenomenon=context.context, from_context=True, doc_type=doc_type, idea=idea)
                 self.documents.append(document)
@@ -152,6 +157,7 @@ class DocumentStore():
                 break
 
         print(f'DocumentStore:: generating and exporting documents')
+        shuffle(self.documents)
         for document in tqdm(self.documents, desc='Gen docs'):
             document.generate(model=model, client=client, panic=panic)
             if document.content is not None:
