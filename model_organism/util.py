@@ -49,16 +49,17 @@ def inference(messages: List[Dict[str, str]] | str, client: ollama.Client=None,
                 return (None, response.content)
         else:
             base_url = "https://glados.ctisl.gtri.org"
+            if "LITELLM_API_KEY" not in os.environ:
+                raise ValueError("LITELLM_API_KEY environment variable not set")
             api_key = os.environ["LITELLM_API_KEY"]
             openai_client = OpenAI(api_key=api_key, base_url=base_url)
+
             chat_response = openai_client.chat.completions.create(
                 model=model,
                 messages=messages,
                 temperature=temperature,
             )
             return (None, chat_response.choices[0].message.content)
-
-
     except Exception as e:
         print(f'[red]util/inference :: messages: {messages}\nclient: {client is not None}\nmodel: {model}, temp: {temperature}[/]')
         raise e

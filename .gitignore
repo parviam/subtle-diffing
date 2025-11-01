@@ -1,3 +1,5 @@
 ollama.out
 .venv/
 __pycache__/
+scratch/
+documents/
