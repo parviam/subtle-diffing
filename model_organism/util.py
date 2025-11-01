@@ -4,7 +4,7 @@ from rich import print
 import os, re
 from openai import OpenAI
 
-def inference(messages: List[Dict[str, str]] | str, client: ollama.Client=None,
+def inference(messages: List[Dict[str, str]] | str, client: ollama.Client|None=None,
               model: str='openai/gpt-oss-120b', temperature: float=0.0) -> Tuple[str, str]:
     """
     Perform inference using the specified Ollama model or GLaDoS (GTRI only).

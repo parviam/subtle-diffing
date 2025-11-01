@@ -30,13 +30,13 @@ class QueryMaker:
 
         print('QueriesMaker :: loading queries from datasets')
         for filename in tqdm(dataset_filenames, desc='Loading datasets'):
-            df = pd.read_csv(filename)
+            df = pd.read_csv(filepath_or_buffer=filename)
             self.core_queries += df['query'].tolist()
         self.queries += self.core_queries.copy()
         print(f'QueriesMaker :: loaded {len(self.core_queries)} queries')
 
         print('QueriesMaker :: getting personas')
-        self.personas: List[str] = pd.read_csv('fine-tuning/prompts/personas.csv')['Persona'].tolist()
+        self.personas: List[str] = pd.read_csv(filepath_or_buffer='fine-tuning/prompts/personas.csv')['Persona'].tolist()
 
         print('QueriesMaker :: generating queries')
         for persona in tqdm(self.personas, desc='Generating queries from personas'):
@@ -58,7 +58,7 @@ class QueryMaker:
         df = pd.DataFrame({'query': self.queries})
         df.to_csv(f'{self.output_dir}/expanded_queries.csv', index=False)
     
-    def expand_query(self, query: str, style: str, persona: str, panic: bool=False) -> str:
+    def expand_query(self, query: str, style: str, persona: str, panic: bool=False) -> str | None:
         """
         Expand a query given a style and persona.
 
@@ -68,7 +68,7 @@ class QueryMaker:
             persona (str): The persona to consider when expanding the query.
             panic (bool): Whether to raise an error on failure.
         Returns:
-            List[str]: A list of expanded queries.
+            (str | None): An expanded query, or none
         """
         try:
             prompt = extract_str('fine-tuning/prompts/expand_query.md')
@@ -82,13 +82,13 @@ class QueryMaker:
             )
             if not query_match:
                 raise ValueError(f"Could not extract expanded query from response")
-            expanded_query_str = query_match.group(1).strip()
+            expanded_query_str = query_match.group(1).strip().replace('\n', '\\n')
             return expanded_query_str
         except Exception as e:
             if panic:
                 print(f"[red]ERROR QueriesMaker :: expand_query :: {response if response else ''}[/]")
                 raise e
-            return None
+            return ''
     
     def generate_styles_from_persona(self, persona: str, panic: bool=False) -> List[str]:
         """
